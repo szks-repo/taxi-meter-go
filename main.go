@@ -107,7 +107,6 @@ func (tm *TaxiMeter) ProcessEvent(event TripEvent) EventResult {
 	return result
 }
 
-// EventResult はイベント処理の結果を表す
 type EventResult struct {
 	Success      bool
 	Message      string
@@ -117,14 +116,12 @@ type EventResult struct {
 	Error        error
 }
 
-// ProcessResult は処理結果の集約を表す
 type ProcessResult struct {
 	EventResults []EventResult
 	FinalFare    int
-	SessionInfo  map[string]interface{}
+	SessionInfo  map[string]any
 }
 
-// TripEvent はタクシーの移動イベントを表す
 type TripEvent struct {
 	EventType TripEventType // "start", "move", "stop", "end"
 	Timestamp time.Time     // イベント発生時刻
@@ -142,7 +139,6 @@ const (
 	TripEventTypeEnd
 )
 
-// FareConfig は料金設定を表す
 type FareConfig struct {
 	InitialFare     int           // 初乗り料金
 	InitialDistance float64       // 初乗り距離 (km)
@@ -153,7 +149,6 @@ type FareConfig struct {
 	TimeUnit        time.Duration // 時間制単位時間
 }
 
-// RideSession は乗車セッション全体を管理する集約
 type RideSession struct {
 	SessionID   string
 	Driver      Driver
@@ -166,7 +161,6 @@ type RideSession struct {
 	PaymentInfo *PaymentInfo
 }
 
-// NewRideSession は新しい乗車セッションを作成する
 func NewRideSession(sessionID string, driver Driver, passenger Passenger, config FareConfig) *RideSession {
 	return &RideSession{
 		SessionID: sessionID,
@@ -189,19 +183,16 @@ const (
 	StatusCancelled SessionStatus = "cancelled"  // キャンセル
 )
 
-// Driver はドライバー情報
 type Driver struct {
 	ID   string
 	Name string
 }
 
-// Passenger は乗客情報
 type Passenger struct {
 	ID   string
 	Name string
 }
 
-// PaymentInfo は決済情報
 type PaymentInfo struct {
 	Method      PaymentMethod
 	Amount      int
@@ -216,7 +207,6 @@ const (
 	PaymentMethodDigital = "digital"
 )
 
-// TaxiMeter はタクシーメータを表す
 type TaxiMeter struct {
 	Config        FareConfig
 	TotalDistance float64
@@ -227,18 +217,12 @@ type TaxiMeter struct {
 	LastEventTime time.Time
 }
 
-// NewTaxiMeter は新しいタクシーメータを作成する
 func NewTaxiMeter(config FareConfig) *TaxiMeter {
 	return &TaxiMeter{
-		Config:        config,
-		TotalDistance: 0,
-		TotalTime:     0,
-		CurrentFare:   0,
-		IsRunning:     false,
+		Config: config,
 	}
 }
 
-// ProcessEvent はイベントを処理してセッションとメータを更新する
 func (rs *RideSession) ProcessEvent(event TripEvent) EventResult {
 	var result EventResult
 	result.LogMessages = make([]string, 0)
@@ -345,7 +329,6 @@ func (rs *RideSession) GetSessionSummary() map[string]any {
 	return summary
 }
 
-// startTrip は乗車開始を処理する
 func (tm *TaxiMeter) startTrip(event TripEvent) EventResult {
 	var result EventResult
 	result.LogMessages = make([]string, 0)
@@ -371,7 +354,6 @@ func (tm *TaxiMeter) startTrip(event TripEvent) EventResult {
 	return result
 }
 
-// processMovement は移動を処理する
 func (tm *TaxiMeter) processMovement(event TripEvent) EventResult {
 	var result EventResult
 	result.LogMessages = make([]string, 0)
@@ -414,7 +396,6 @@ func (tm *TaxiMeter) processMovement(event TripEvent) EventResult {
 	return result
 }
 
-// processStop は停止を処理する
 func (tm *TaxiMeter) processStop(event TripEvent) EventResult {
 	var result EventResult
 	result.LogMessages = make([]string, 0)
@@ -445,7 +426,6 @@ func (tm *TaxiMeter) processStop(event TripEvent) EventResult {
 	return result
 }
 
-// endTrip は乗車終了を処理する
 func (tm *TaxiMeter) endTrip(event TripEvent) EventResult {
 	var result EventResult
 	result.LogMessages = make([]string, 0)
@@ -467,14 +447,12 @@ func (tm *TaxiMeter) endTrip(event TripEvent) EventResult {
 	return result
 }
 
-// FareCalculationInfo は料金計算の詳細情報を表す
 type FareCalculationInfo struct {
 	Amount int
 	Units  int
 	Reason string
 }
 
-// calculateDistanceFare は距離制料金を計算する（副作用なし）
 func (tm *TaxiMeter) calculateDistanceFare(distance float64) FareCalculationInfo {
 	if tm.TotalDistance <= tm.Config.InitialDistance {
 		return FareCalculationInfo{Amount: 0, Units: 0, Reason: "初乗り距離内"}
@@ -503,7 +481,6 @@ func (tm *TaxiMeter) calculateDistanceFare(distance float64) FareCalculationInfo
 	}
 }
 
-// calculateTimeFare は時間制料金を計算する（副作用なし）
 func (tm *TaxiMeter) calculateTimeFare(duration time.Duration) FareCalculationInfo {
 	units := int(duration / tm.Config.TimeUnit)
 	if units <= 0 {
@@ -517,7 +494,6 @@ func (tm *TaxiMeter) calculateTimeFare(duration time.Duration) FareCalculationIn
 	}
 }
 
-// generateSummaryMessages はサマリーメッセージを生成する
 func (tm *TaxiMeter) generateSummaryMessages() []string {
 	return []string{
 		fmt.Sprintf("総距離: %.2f km", tm.TotalDistance),
@@ -526,17 +502,14 @@ func (tm *TaxiMeter) generateSummaryMessages() []string {
 	}
 }
 
-// GetCurrentFare は現在の料金を返す
 func (tm *TaxiMeter) GetCurrentFare() int {
 	return tm.CurrentFare
 }
 
-// GetTotalDistance は総距離を返す
 func (tm *TaxiMeter) GetTotalDistance() float64 {
 	return tm.TotalDistance
 }
 
-// processEvents は複数のイベントを処理し、ログを出力する
 func processEvents(session *RideSession, events []TripEvent) ProcessResult {
 	var result ProcessResult
 	result.EventResults = make([]EventResult, 0, len(events))
@@ -545,7 +518,6 @@ func processEvents(session *RideSession, events []TripEvent) ProcessResult {
 		eventResult := session.ProcessEvent(event)
 		result.EventResults = append(result.EventResults, eventResult)
 
-		// ログ出力
 		for _, msg := range eventResult.LogMessages {
 			slog.Info(msg)
 		}
