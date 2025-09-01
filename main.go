@@ -64,7 +64,7 @@ func main() {
 	)
 
 	processResult := processEvents(rideSession, events)
-	paymentResult := rideSession.ProcessPayment("card", time.Now())
+	paymentResult := rideSession.ProcessPayment(PaymentMethodCard, time.Now())
 	if !paymentResult.Success {
 		slog.Warn("決済エラー", "error", paymentResult.Error)
 	}
@@ -203,10 +203,18 @@ type Passenger struct {
 
 // PaymentInfo は決済情報
 type PaymentInfo struct {
-	Method      string // "cash", "card", "digital"
+	Method      PaymentMethod
 	Amount      int
 	ProcessedAt *time.Time
 }
+
+type PaymentMethod string
+
+const (
+	PaymentMethodCash    = "cash"
+	PaymentMethodCard    = "card"
+	PaymentMethodDigital = "digital"
+)
 
 // TaxiMeter はタクシーメータを表す
 type TaxiMeter struct {
@@ -284,7 +292,7 @@ func (rs *RideSession) ProcessEvent(event TripEvent) EventResult {
 	return result
 }
 
-func (rs *RideSession) ProcessPayment(method string, now time.Time) EventResult {
+func (rs *RideSession) ProcessPayment(method PaymentMethod, now time.Time) EventResult {
 	var result EventResult
 	result.LogMessages = make([]string, 0)
 
